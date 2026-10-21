@@ -1,31 +1,34 @@
 # Shopware Images
 
-Image to run Shopware 6 apps in a container
+Images to run Shopware 6 in containers
+
+## Status
+* [![Publish Images to Registry](https://github.com/TotalcomNetwork/shopware-images/actions/workflows/build-and-push.yaml/badge.svg)](https://github.com/TotalcomNetwork/shopware-images/actions/workflows/build-and-push.yaml)
 
 ## Quick reference
 
-### Build the image:
+### Build the image
 
 ```
-docker build -t davidetriso/shopware:[tagname-dir_name] ./[tagname-dir_name]
-```
-
-E.g.:
-
-```
-docker build -t davidetriso/shopware:php-8.1-fpm ./php-8.1-fpm
-```
-
-### Push image to Docker Hub
-
-```
-docker push davidetriso/shopware:tagname
+docker buildx build --tag artifacts.totalcom.it/library/shopware:[tagname-dir_name] -o type=image --platform=linux/amd64 ./[tagname-dir_name]
 ```
 
 E.g.:
 
 ```
-docker push davidetriso/shopware:php-8.1-fpm
+docker buildx build --tag artifacts.totalcom.it/library/shopware:php-8.1-fpm -o type=image --platform=linux/amd64 ./php-8.5-fpm
+```
+
+### Push image to registry
+
+```
+docker push artifacts.totalcom.it/library/shopware:tagname
+```
+
+E.g.:
+
+```
+docker push artifacts.totalcom.it/library/shopware:php-8.1-fpm
 ```
 
 ###  Build and push everything
@@ -35,26 +38,9 @@ Execute the `./build-and-push.sh` script to build and push all images to Docker 
 
 ## How to use
 
-Bind-mount the root directory of your Shopware 6 project in the container's working directory (`/var/www/html`).
+This image is created starting from the official PHP Docker image. Look at the "How to use this image" section of the [official image readme](https://hub.docker.com/_/php) to learn how to configure and use this image.
 
-Uploaded media are stored by Shopware in the `public/media` folder, so it is necessary to mount a volume at this directory too. 
-
-For example, in a compose file add:
-
-```yaml
-shopware:
-    # ... other settings here ...
-    volumes:
-        - ./:/var/www/html/:rw
-        - media:/var/www/html/public/media:rw
-
-volumes:
-    media:
-```
-
-The image uses the default production-optimized `php.ini` file shipped in the `php` docker image and some settings are overridden by the `100-shopware-requirements-php.ini` file to meet Shopware 6 minimum requirements.
-
-To customize the PHP settings to your needs it is sufficient to bind-mount a custom `ini` file in the container's `/usr/local/etc/php/conf.d/` directory.
+The image uses a production-optimized php.ini file. To customize the PHP settings to your needs it is sufficient to bind-mount a custom ini file in the container's `/usr/local/etc/php/conf.d/` directory.
 
 E.g.:
 
