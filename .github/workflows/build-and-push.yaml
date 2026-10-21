@@ -51,6 +51,7 @@ jobs:
           context: ./${{ matrix.dir }}
           file: ./${{ matrix.dir }}/Dockerfile
           push: true
+          sbom: true
           tags: artifacts.totalcom.it/library/shopware:${{ matrix.dir }}
           platforms: linux/amd64
           cache-from: type=gha
