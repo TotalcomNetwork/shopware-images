@@ -4,7 +4,9 @@ ENV     TZ=UTC
 
 USER    root
 
-ADD     https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN     curl --retry 5 --retry-all-errors --retry-delay 2 -fsSL \
+            https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions \
+            -o /usr/local/bin/install-php-extensions
 
 RUN     apk add --no-cache \
             git \
