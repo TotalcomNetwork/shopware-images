@@ -28,7 +28,7 @@ RUN     apk add --no-cache \
             zip \
             @composer \
         && mkdir /usr/local/etc/php/conf.d/disabled \
-        && mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/disabled \ 
+        && mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/disabled \
         && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
         && mkdir -p /var/www/html \
         && mkdir -p /var/www/html/public/media \
@@ -37,4 +37,6 @@ RUN     apk add --no-cache \
         && mkdir -p /var/www/html/custom/apps \
         && chown -R www-data:www-data /var/www/html/public
 
-COPY    ./100-shopware-requirements-php.ini ./usr/local/etc/php/conf.d/100-shopware-requirements-php.ini
+COPY    ./100-shopware-requirements-php.ini /usr/local/etc/php/conf.d/100-shopware-requirements-php.ini
+
+WORKDIR /var/www/html
