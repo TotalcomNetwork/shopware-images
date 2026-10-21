@@ -1,11 +1,11 @@
-name: Publish Docker images
+name: Publish Images to Registry
 
 on:
   release:
     types: [published]
   workflow_dispatch:
   schedule:
-    - cron: '0 0 4 * *'
+    - cron: '0 6 6 * *'
 
 jobs:
   prepare:
@@ -13,7 +13,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - id: set-matrix
         run: |
           DIRS=$(find . -maxdepth 1 -type d -name 'php-*' -printf '%f\n' | jq -R -s -c 'split("\n")[:-1]')
@@ -33,24 +33,58 @@ jobs:
         dir: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - name: Log in to Totalcom's Artifacts Registry
+        uses: docker/login-action@v4
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          registry: artifacts.totalcom.it
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./${{ matrix.dir }}
           file: ./${{ matrix.dir }}/Dockerfile
           push: true
-          tags: davidetriso/shopware:${{ matrix.dir }}
+          tags: artifacts.totalcom.it/library/shopware:${{ matrix.dir }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  write_result:
+    needs: push_to_registry
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Write build result file
+        run: |
+          if [ "${{ needs.push_to_registry.result }}" = "success" ]; then
+            RESULT="all builds succeeded"
+          else
+            RESULT="one or more builds failed"
+          fi
+
+          {
+            echo "completed: $(date -u +"%Y-%m-%d %H:%M:%SZ")"
+            echo "result: $RESULT"
+          } > build-and-push-result.txt
+
+      - name: Commit and push build result
+        env:
+          TARGET_BRANCH: ${{ github.event_name == 'release' && github.event.repository.default_branch || github.ref_name }}
+        run: |
+          git config user.name "build-and-push-automation"
+          git config user.email "developers@totalcom.it"
+          git add build-and-push-result.txt
+          git commit -m "chore: update build-and-push result" || exit 0
+          git push origin HEAD:"$TARGET_BRANCH"
